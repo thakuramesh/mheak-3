@@ -11,7 +11,6 @@ META_FILE = "metadata.txt"
 CATEGORY_ID = "24" # 24 = Entertainment
 
 def create_token_from_secret():
-    # 🔴 ERROR FIX: Base64 token ko decode karke file banana
     token_b64 = os.getenv("YOUTUBE_TOKEN_BASE64")
     if token_b64:
         try:
@@ -46,10 +45,10 @@ def upload_video():
         print(f"❌ Video file not found at: {VIDEO_FILE}")
         return
         
-    create_token_from_secret() # 🔴 Calling the fix here
+    create_token_from_secret() 
     
     title, description, tags_string = parse_metadata()
-    tags = [tag.strip() for tag in tags_string.split(",")][:6] # Max 6 tags
+    tags = [tag.strip() for tag in tags_string.split(",")][:6] 
     
     ai_disclaimer = "यह एक ओरिजिनल कहानी है जिसे हमारी टीम द्वारा क्रिएटिव एडिटिंग और AI (visuals/voice) का इस्तेमाल करके बनाया गया है।\n\n"
     final_description = ai_disclaimer + description
@@ -63,16 +62,23 @@ def upload_video():
     creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/youtube.upload'])
     youtube = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
 
+    # 🔴 यहाँ हमने 'Altered Content' (AI Use) के लिए एक्सपेरिमेंटल पैरामीटर जोड़े हैं
     request_body = {
         "snippet": {
             "categoryId": CATEGORY_ID,
-            "title": title[:60], # Forced Max 60 Chars
+            "title": title[:60], 
             "description": final_description[:5000],
             "tags": tags
         },
         "status": {
             "privacyStatus": "public", 
-            "selfDeclaredMadeForKids": False
+            "selfDeclaredMadeForKids": False,
+            
+            # 🛑 EXPERIMENTAL (TESTING AI USE TICK) 🛑
+            "alteredContent": True  
+            
+            # (अगर ऊपर वाला काम न करे, तो उसे हटाकर नीचे वाला ट्राई करें)
+            # "selfDeclaredMadeWithAi": True 
         }
     }
 
@@ -83,7 +89,8 @@ def upload_video():
         response = request.execute()
         print(f"✅ VIDEO SUCCESSFULLY UPLOADED! Link: https://youtu.be/{response['id']}")
     except Exception as e:
-        print(f"❌ Upload Failed: {e}")
+        print(f"\n❌ Upload Failed: {e}")
+        print("\n⚠️ नोट: अगर ऊपर Error में 'unexpected parameter' या 'alteredContent' लिखा है, तो इसका मतलब है कि Google ने यह पैरामीटर अभी बंद कर रखा है या इसका नाम बदल दिया है।")
 
 if __name__ == "__main__":
     upload_video()
